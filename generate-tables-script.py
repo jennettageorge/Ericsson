@@ -1,5 +1,6 @@
 import pandas as pd
 import sys, getopt
+import os 
 
 def main(argv):
     inputfile = ''
@@ -15,7 +16,12 @@ def main(argv):
         elif opt in ("-i", "--ifile"):
             inputfile = arg
     print('Input file is ', inputfile)
-
+    
+    
+    outputfolder = os.path.splitext(inputfile)[0]
+    
+    print('Output folder is ', outputfolder)
+    os.mkdir(outputfolder)
 
     df = pd.read_csv(inputfile)
 
@@ -46,11 +52,11 @@ def main(argv):
                                  'PostTime':lambda x: x.astype('timedelta64[s]').mean()})
     first.columns = ['Bin','AvgWaitTime','AvgPostTime']
     first = first.reset_index()
-    first.to_csv('Hour_summary.csv')
+    first.to_csv(outputfolder+ '/Hour_summary.csv')
 
     #Second Table:
     df2 = df.groupby('Operation').agg({'PostTime':lambda x: x.astype('timedelta64[s]').mean()})
-    df2.to_csv('create_edit.csv')
+    df2.to_csv(outputfolder+ '/create_edit.csv')
 
 
     #Third Table:
@@ -64,12 +70,13 @@ def main(argv):
     lst = df.groupby(['Operation','Bin'])['PostSubTime'].count()
     lst.name = 'Count'
     lst = lst.reset_index()
-    lst.to_csv('bin_operation.csv')
+    lst.to_csv(outputfolder+ '/bin_operation.csv')
+    
     createtotal = df[df.Operation=='CREATE']['Bin'].count()
     edittotal = df[df.Operation=='EDIT']['Bin'].count()
     lst['Percent'] = lst.apply(lambda row: funct(row), axis=1)
-    lst.to_csv('percent.csv')
-
+    lst.to_csv(outputfolder+ '/percent.csv')
+    
 
 
     #Last Table:
@@ -77,9 +84,12 @@ def main(argv):
     newdf = df.groupby(['PostStartHour','Operation','Bin'])['PostSubTime'].count()
     newdf.name = 'Count'
     newdf = newdf.reset_index()
-    newdf.to_csv('hour_operation_bin.csv')
-    print('created last table')
+    newdf.to_csv(outputfolder+ '/hour_operation_bin.csv')
+    
+    
+    print('Job is done!')
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
